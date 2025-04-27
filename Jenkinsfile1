@@ -47,6 +47,7 @@ pipeline {
   stage ("Install Deependencies") {
          steps  {
            sh 'npm install'
+           sh 'npm audit fix --force'
            
          }
          }
