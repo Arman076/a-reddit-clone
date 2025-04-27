@@ -47,7 +47,7 @@ pipeline {
   stage ("Install Deependencies") {
          steps  {
            sh 'npm install'
-           //sh 'npm audit fix --force'
+           sh 'npm audit fix --force'
            
          }
          }
@@ -75,6 +75,24 @@ docker.withRegistry('',DOCKER_PASS) {
 }
 }
 
+
+stage ("Trivy Image Scan") {
+steps {
+script {
+sh { ' docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image devil678/a-reddit-clone:latest --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table > trivyfs.txt' }
+}
+}
+}
+
+
+stage ("CleanUp Artifacts") {
+steps {
+scripts {
+sh 'docker rmi ${IMAGE_NAME}'
+sh 'docker rmi ${IMAGE_NAME}:latest'
+}
+}
+}
 
 
 
