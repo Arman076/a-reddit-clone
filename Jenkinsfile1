@@ -1,56 +1,54 @@
-pipeline {
+pipeline { 
   agent any
   tools {
-  jdk 'jdk17'
-  nodejs 'node23'
+    jdk 'jdk17'
+    nodejs 'node23'
   }
   environment {
     SCANNER_HOME = tool 'sonar-scanner'
     APP_NAME = 'a-reddit-clone'
     DOCKER_USER = 'devil678'
     DOCKER_PASS = 'docker-cred'
-    IMAGE_NAME = "${DOCKER_USER}" + "/" + "${APP_NAME}"
+    IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
     IMAGE_TAG = "${BUILD_NUMBER}"
   }
   stages {
     stage("Clean WorkSpace") {
       steps {
-      cleanWs()
+        cleanWs()
+      }
     }
-  }
 
-    stage ("Cloning the good from the git hub Repo") {
+    stage("Cloning the repo") {
       steps {
-        git branch: "main", url: "https://github.com/Arman076/a-reddit-clone.git" 
-        echo "cloning the code successfully"
+        git branch: "main", url: "https://github.com/Arman076/a-reddit-clone.git"
+        echo "Cloning the code successfully"
         sh "ls -ltr"
       }
     }
-    stage ("Sonarqube Analaysis") {
-     steps {
-      withSonarQubeEnv('sonar-server'){
-     sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Reddit-Clone-CI \
-     -Dsonar.projectKey=Reddit-Clone-CI'''
+
+    stage("SonarQube Analysis") {
+      steps {
+        withSonarQubeEnv('sonar-server') {
+          sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Reddit-Clone-CI \
+          -Dsonar.projectKey=Reddit-Clone-CI'''
+        }
       }
     }
+
+    stage("Quality Gate Analysis") {
+      steps {
+        script {
+          waitForQualityGate abortPipeline: false, credentialsId: 'Sonarqube'
+        }
+      }
     }
 
-
-  stage("Quality Gate Analysis") {
-  steps {
-         script {
-           waitForQualityGate abortPipeline: false, credentialsId: 'Sonarqube'
-         }
-         }
-         }
-
-  stage ("Install Deependencies") {
-         steps  {
-           sh 'npm install'
-          
-           
-         }
-         }
+    stage("Install Dependencies") {
+      steps {
+        sh 'npm install'
+      }
+    }
 
     stage("Trivy File System Scan") {
       steps {
@@ -58,61 +56,51 @@ pipeline {
       }
     }
 
-   stage ("Docker build and push images") {
-steps {
-script {
-docker.withRegistry('',DOCKER_PASS) {
-    docker_image = docker.build "${IMAGE_NAME}"
-}
+    stage("Docker Build and Push Images") {
+      steps {
+        script {
+          docker.withRegistry('', DOCKER_PASS) {
+            docker_image = docker.build("${IMAGE_NAME}")
+          }
 
-docker.withRegistry('',DOCKER_PASS) {
-   docker_image.push("${IMAGE_TAG}")
-   docker_image.push("latest")
-
-}
-}
-}
-}
-
-
-
-stage ("Trivy Image Scan") {
-steps {
-script {
-sh { ' docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image devil678/a-reddit-clone:latest --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table > trivyfs.txt' }
-}
-}
-}
-
-
-stage ("CleanUp Artifacts") {
-steps {
-scripts {
-sh 'docker rmi ${IMAGE_NAME}'
-sh 'docker rmi ${IMAGE_NAME}:latest'
-}
-}
-}
-
-
-
-}
-}
-
-
-
-post {
-        always {
-            emailext (
-                to: "anjaraalam3597@gmail.com",
-                subject: "Jenkins Build: ${currentBuild.fullDisplayName}",
-                body: """<p><strong>Job:</strong> ${env.JOB_NAME}</p>
-                         <p><strong>Build #:</strong> ${env.BUILD_NUMBER}</p>
-                         <p><strong>Status:</strong> ${currentBuild.result ?: 'SUCCESS'}</p>
-                         <p><a href="${env.BUILD_URL}">View Full Logs</a></p>""",
-                attachmentsPattern: 'trivyfs.txt,trivyimage.txt',
-                attachLog: true,
-                mimeType: 'text/html'
-            )
+          docker.withRegistry('', DOCKER_PASS) {
+            docker_image.push("${IMAGE_TAG}")
+            docker_image.push("latest")
+          }
         }
+      }
     }
+
+    stage("Trivy Image Scan") {
+      steps {
+        sh '''docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image devil678/a-reddit-clone:latest \
+        --no-progress --scanners vuln --exit-code 0 --severity HIGH,CRITICAL --format table > trivyimage.txt'''
+      }
+    }
+
+    stage("CleanUp Artifacts") {
+      steps {
+        script {
+          sh "docker rmi ${IMAGE_NAME}"
+          sh "docker rmi ${IMAGE_NAME}:latest"
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      emailext (
+        to: "anjaraalam3597@gmail.com",
+        subject: "Jenkins Build: ${currentBuild.fullDisplayName}",
+        body: """<p><strong>Job:</strong> ${env.JOB_NAME}</p>
+                 <p><strong>Build #:</strong> ${env.BUILD_NUMBER}</p>
+                 <p><strong>Status:</strong> ${currentBuild.result ?: 'SUCCESS'}</p>
+                 <p><a href="${env.BUILD_URL}">View Full Logs</a></p>""",
+        attachmentsPattern: 'trivyfs.txt,trivyimage.txt',
+        attachLog: true,
+        mimeType: 'text/html'
+      )
+    }
+  }
+}
