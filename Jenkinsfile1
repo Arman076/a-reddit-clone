@@ -2,7 +2,7 @@ pipeline {
   agent any
   tools {
   jdk 'jdk17'
-  nodejs 'node18'
+  nodejs 'node23'
   }
   environment {
     SCANNER_HOME = tool 'sonar-scanner'
@@ -27,17 +27,17 @@ pipeline {
       }
     }
     stage ("Sonarqube Analaysis") {
-    steps {
+     steps {
       withSonarQubeEnv('sonar-server'){
      sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Reddit-Clone-CI \
      -Dsonar.projectKey=Reddit-Clone-CI'''
       }
     }
     }
-}
 
-  stage ("Quality Gate Analysis") {
-         steps {
+
+  stage("Quality Gate Analysis") {
+  steps {
          script {
            waitForQualityGate abortPipeline: false, credentialsID: 'Sonarqube'
          }
