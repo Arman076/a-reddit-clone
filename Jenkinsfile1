@@ -73,7 +73,7 @@ docker.withRegistry('',DOCKER_PASS) {
 }
 }
 }
-}
+
 
 
 stage ("Trivy Image Scan") {
@@ -96,4 +96,5 @@ sh 'docker rmi ${IMAGE_NAME}:latest'
 
 
 
+}
 }
