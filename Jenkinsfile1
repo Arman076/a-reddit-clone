@@ -83,15 +83,7 @@ pipeline {
       }
     }
 
-    stage("Add the repo in the helm chart") {
-      steps {
-        sh 'helm repo add prometheus-community https://prometheus-community.github.io/helm-charts'
-        echo "prometheus chart added in the repo"
-        sh 'kubectl create namespace prometheus'
-        sh 'helm install stable prometheus-community/kube-prometheus-stack -n prometheus'
-        sh 'kubectl get pods -n prometheus'
-      }
-    }
+
 
     stage("Trivy Image Scan") {
       steps {
