@@ -71,6 +71,30 @@ pipeline {
       }
     }
 
+   stage ("Install the helm chart and give appropriate permission") {
+      steps {
+        sh 'curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3'
+        echo 'helm chart installed Successfully'
+        sh 'chmod 700 get_helm.sh'
+        echo "given executable permisssion for owner"
+        sh './get_helm.sh'
+       echo "now execute the helm chart"
+       sh 'helm version'
+  }
+}
+
+
+
+  stage ("Add the repo in the helm chart") (
+      steps {
+        sh 'helm repo add prometheus-community https://prometheus-community.github.io/helm-charts'
+        echo "prometheus chart added in the repo"
+        sh 'kubectl create namespace prometheus'
+        sh 'helm install stable prometheus-community/kube-prometheus-stack -n prometheus'
+        sh 'kubectl get pods -n prometheus'
+
+  }
+  } 
     stage("Trivy Image Scan") {
       steps {
         sh '''docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image devil678/a-reddit-clone:latest \
