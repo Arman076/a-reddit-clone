@@ -1,0 +1,15 @@
+firebase.json
+README.md
+Jenkinsfile
+Jenkinsfile1
+*.ts
+*.tsx
+*.js
+*.json
+*.md
+*.lock
+*.ico
+*.svg
+*.png
+Dockerfile
+next.config.js
