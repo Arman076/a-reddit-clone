@@ -1,41 +1,40 @@
 pipeline {
-	agent any 
-	environment {
-		APP_NAME = 'a-reddit-clone'
-}
-	stages {
-		stage ("CleanUp Workspace") {
-        	     steps {
-			cleanWs()
-	}
-		}
-	stage ("Checkout from the SCM") {
-		steps {
-		  git branch: "main" url: 'https://github.com/Arman076/a-reddit-clone.git'
-		}
-	}
-	stage ("Update the deployment tags") {
-	    steps {
-	      
-		sh """
-			cat deployment.yaml
-			sed -i 's/${APP_NAME}.*/${APP_NAME}:${IMAGE_TAG}/g' deployment.yaml
-			cat deployment.yaml
-"""
-	}
-		}
-	stage ("pushed changes file to the github") {
-		steps {
-		sh """
-		git config --global.username 'Arman076'
-		git config --global user.email "khanarmankh121@gmail.com"
-		git add deployment.yaml
-		git commit -m "Updated Deployment Manifests"
-"""
-		withCredentials([gitUsernamePassword(credentialsId: 'github', gitToolName: 'Default')]) {
-			sh "git push https://github.com/Arman076/a-reddit-clone.git main"
-	}
-		}
-			}
-	}
+    agent any
+    environment {
+        APP_NAME = 'a-reddit-clone'
+    }
+    stages {
+        stage("CleanUp Workspace") {
+            steps {
+                cleanWs()
+            }
+        }
+        stage("Checkout from the SCM") {
+            steps {
+                git branch: 'main', url: 'https://github.com/Arman076/a-reddit-clone.git'
+            }
+        }
+        stage("Update the deployment tags") {
+            steps {
+                sh """
+                    cat deployment.yaml
+                    sed -i 's/${APP_NAME}.*/${APP_NAME}:${IMAGE_TAG}/g' deployment.yaml
+                    cat deployment.yaml
+                """
+            }
+        }
+        stage("Pushed changes file to GitHub") {
+            steps {
+                sh """
+                    git config --global user.name 'Arman076'
+                    git config --global user.email 'khanarmankh121@gmail.com'
+                    git add deployment.yaml
+                    git commit -m "Updated Deployment Manifests"
+                """
+                withCredentials([gitUsernamePassword(credentialsId: 'github', gitToolName: 'Default')]) {
+                    sh "git push https://github.com/Arman076/a-reddit-clone.git main"
+                }
+            }
+        }
+    }
 }
