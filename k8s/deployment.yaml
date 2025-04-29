@@ -21,7 +21,7 @@ spec:
         requests:
           cpu: "500m"
         ports:
-        - containerPort: 3000  create service.yaml
+        - containerPort: 3000
 
 
 
