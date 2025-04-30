@@ -8,11 +8,12 @@ pipeline {
     SCANNER_HOME = tool 'sonar-scanner'
     APP_NAME = 'a-reddit-clone'
     DOCKER_USER = 'devil678'
-    DOCKER_PASS = 'docker-cred'
+    DOCKER_PASS = 'docker-cred' // Ensure you have set up Docker credentials correctly
     IMAGE_NAME = "${DOCKER_USER}/${APP_NAME}"
     IMAGE_TAG = "${BUILD_NUMBER}"
     JENKINS_API_TOKEN = credentials("JENKINS_API_TOKEN")
-  
+    EMAIL_CREDS_USR = credentials('email-creds').username
+    EMAIL_CREDS_PSW = credentials('email-creds').password
   }
   stages {
     stage("Clean WorkSpace") {
@@ -85,8 +86,6 @@ pipeline {
       }
     }
 
-
-
     stage("Trivy Image Scan") {
       steps {
         sh '''docker run -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image devil678/a-reddit-clone:latest \
@@ -102,12 +101,12 @@ pipeline {
       }
     }
 
-  stage ("Trigger Pipeline CICD") {
-    steps {
-      script {
-        sh "curl -v -k --user clouduser:${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'ec2-65-2-140-96.ap-south-1.compute.amazonaws.com:8080/job/Reddit-Clone-CD/buildWithParameters?token=gitops-token'"
-    }
-  }
+    stage ("Trigger Pipeline CICD") {
+      steps {
+        script {
+          sh "curl -v -k --user clouduser:${JENKINS_API_TOKEN} -X POST -H 'cache-control: no-cache' -H 'content-type: application/x-www-form-urlencoded' --data 'IMAGE_TAG=${IMAGE_TAG}' 'ec2-65-2-140-96.ap-south-1.compute.amazonaws.com:8080/job/Reddit-Clone-CD/buildWithParameters?token=gitops-token'"
+        }
+      }
     }
 
   }
@@ -121,6 +120,8 @@ pipeline {
                  <p><strong>Build #:</strong> ${env.BUILD_NUMBER}</p>
                  <p><strong>Status:</strong> ${currentBuild.result ?: 'SUCCESS'}</p>
                  <p><a href="${env.BUILD_URL}">View Full Logs</a></p>""",
+        smtpAuthUser: "${EMAIL_CREDS_USR}",
+        smtpAuthPassword: "${EMAIL_CREDS_PSW}",
         attachmentsPattern: 'trivyfs.txt,trivyimage.txt',
         attachLog: true,
         mimeType: 'text/html'
