@@ -6,7 +6,7 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-  - host: reddit.dev.local   # Change to your domain
+  - host: reddit.com
     http:
       paths:
       - path: /
