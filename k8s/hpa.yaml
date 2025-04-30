@@ -1,5 +1,5 @@
 kind: HorizontalPodAutoscaler
-apiVersion: v1
+apiVersion: autoscaling/v2
 metadata:
   name: reddit-hpa
   namespace: reddit
